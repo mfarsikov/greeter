@@ -1,6 +1,5 @@
 HELP.md
 .gradle
-/build/
 !gradle/wrapper/gradle-wrapper.jar
 
 ### STS ###
@@ -28,3 +27,5 @@ HELP.md
 
 ### VS Code ###
 .vscode/
+terraform/.terraform/plugins/
+terraform/terraform.tfstate*

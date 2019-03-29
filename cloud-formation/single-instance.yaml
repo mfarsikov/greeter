@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Single EC2 instance
+Resources:
+  EC2Instance1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      KeyName: aws
+      ImageId: "ami-0ad01fbc1c4f67992"
+      Tags:
+        - Key: Name
+          Value: "greeter1"
+  EC2Instance2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      KeyName: aws
+      ImageId: "ami-0ad01fbc1c4f67992"
+      Tags:
+        - Key: Name
+          Value: "greeter2"
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Web server. SSH, HTTP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+Outputs:
+  InstanceId:
+    Value: !Ref EC2Instance1
+  AZ:
+    Value: !GetAtt
+      - EC2Instance1
+      - AvailabilityZone
+  PublicDNS:
+    Value: !GetAtt
+      - EC2Instance1
+      - PublicDnsName
+  PublicIP:
+    Value: !GetAtt
+      - EC2Instance1
+      - PublicIp
