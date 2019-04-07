@@ -7,8 +7,6 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfig
       MinSize: '1'
       MaxSize: '3'
-      TargetGroupARNs:
-        - !Ref ALBTargetGroup
       AvailabilityZones:
         - us-east-2a
         - us-east-2b
@@ -21,51 +19,13 @@ Resources:
       SecurityGroups:
         - !Ref InstanceSecurityGroup
       InstanceType: t2.micro
-  ApplicationLoadBalancer:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      Subnets:
-        - 'subnet-18994754'
-        - 'subnet-bba5d2c1'
-        - 'subnet-482c1520'
-  ALBListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroup
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: '80'
-      Protocol: HTTP
-  ALBTargetGroup:
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      Port: 80
-      Protocol: HTTP
-      VpcId: 'vpc-ef657487'
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access and HTTP from the load balancer only
+      VpcId: 'vpc-ef657487'
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          SourceSecurityGroupId: !Select
-            - 0
-            - !GetAtt
-              - ApplicationLoadBalancer
-              - SecurityGroups
-      VpcId: 'vpc-ef657487'
-Outputs:
-  URL:
-    Description: The URL of the website
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-          - ApplicationLoadBalancer
-          - DNSName
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
