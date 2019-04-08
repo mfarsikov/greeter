@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'auto scaling'
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: tutorial-123321
+      VersioningConfiguration:
+        Status: 'Enabled'
+  S3User:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: 'S3User'
+  S3policy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: S3policy
+      PolicyDocument: >
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+          {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject"
+            ],
+            "Resource": "arn:aws:s3:::*/*"
+          },
+          {
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::*"
+          },
+          {
+            "Sid": "VisualEditor2",
+            "Effect": "Allow",
+            "Action": "s3:HeadBucket",
+            "Resource": "*"
+          }
+          ]
+        }
+      Users: [!Ref S3User]
