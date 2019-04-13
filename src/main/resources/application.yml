@@ -1,0 +1,10 @@
+server.port: 80
+amazonProperties.bucketName: tutorial-123321
+spring:
+  datasource:
+    url: jdbc:postgresql://greeter-db.cpvjfvbuegvq.us-east-2.rds.amazonaws.com:5432/greeter_db
+    username: mfarsikov
+    password: '********'
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate.ddl-auto: create
