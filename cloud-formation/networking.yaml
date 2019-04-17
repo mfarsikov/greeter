@@ -1,0 +1,181 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'networking'
+Resources:
+  Vpc:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+
+  PublicSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: '10.0.1.0/24'
+      VpcId: !Ref Vpc
+      AvailabilityZone:  'us-east-2a'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: 'Name'
+          Value: 'public-subnet-A'
+
+  PublicSubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: '10.0.2.0/24'
+      VpcId: !Ref Vpc
+      AvailabilityZone:  'us-east-2b'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: 'Name'
+          Value: 'public-subnet-B'
+
+  PrivateSubnetC:
+      Type: "AWS::EC2::Subnet"
+      Properties:
+        CidrBlock: '10.0.3.0/24'
+        VpcId: !Ref Vpc
+        AvailabilityZone:  'us-east-2b'
+        Tags:
+          - Key: 'Name'
+            Value: 'private-subnet-C'
+
+  WebServerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH and HTTP
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'
+
+  LoadBalancerSecurityGroup:
+    Type:  'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Load balancer
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: 0
+          ToPort: 0
+          CidrIp: '0.0.0.0/0'
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PubicRouteTable:
+    Type:  'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+
+  InternetGwRoute:
+    Type:  'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref  PubicRouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: '0.0.0.0/0'
+
+  PublicSubnesRouteA:
+    Type:  'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PubicRouteTable
+      SubnetId: !Ref PublicSubnetA
+
+  PublicSubnetRouteB:
+    Type:  'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PubicRouteTable
+      SubnetId: !Ref PublicSubnetB
+
+  ServerA:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0bae71009e339a1e0'
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      KeyName: 'aws'
+      Tags:
+        - Key: 'Name'
+          Value: 'public-A'
+
+  ServerB:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0bae71009e339a1e0'
+      SubnetId: !Ref PrivateSubnetC
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      KeyName: 'aws'
+      Tags:
+        - Key: 'Name'
+          Value: 'private-B'
+
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+    Properties:
+      Subnets:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      Instances:
+        - Ref: ServerA
+        - Ref: ServerB
+      Listeners:
+        - LoadBalancerPort: '80'
+          InstancePort: '80'
+          Protocol: HTTP
+      HealthCheck:
+        HealthyThreshold: 2
+        Interval: 5
+        Target: 'http:80/'
+        UnhealthyThreshold: 2
+        Timeout: 2
+      SecurityGroups:
+        - Ref: LoadBalancerSecurityGroup
+
+  EIP:
+    Type: 'AWS::EC2::EIP'
+
+  Nat:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      AllocationId:
+        Fn::GetAtt:
+        - "EIP"
+        - "AllocationId"
+
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+
+  NatGwRoute:
+    Type:  'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref  PrivateRouteTable
+      NatGatewayId: !Ref Nat
+      DestinationCidrBlock: '0.0.0.0/0'
+
+  PrivateSubnesRouteC:
+    Type:  'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetC
