@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'messaging'
+Resources:
+
+  Sqs:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: 'tutorial-queue'
+
+  Sns:
+    Type: 'AWS::SNS::Topic'
+
+  EmailSubscriptin:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      TopicArn: !Ref Sns
+      Protocol: email
+      Endpoint: 'farsikovmax@gmail.com'
